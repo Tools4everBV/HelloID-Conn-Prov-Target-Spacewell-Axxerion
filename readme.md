@@ -18,7 +18,7 @@
 
 ## Introduction
 
-The _HelloID-Conn-Prov-Target-Axxerion-Spacewell_ is a facility management suite and provides a set of REST API's that allow you to programmatically interact with it's data.
+The _HelloID-Conn-Prov-Target-Spacewell-Axxerion_ is a facility management suite and provides a set of REST API's that allow you to programmatically interact with it's data.
 
 ## Getting started
 
@@ -35,7 +35,7 @@ The following settings are required to connect to the API.
 
 ### Prerequisites
 
-> The _HelloID-Conn-Prov-Target-KPNLisa_ connector is built for both Windows PowerShell 5.1 and PowerShell Core 7. This means the connector can be executed using the _On-Premises_ HelloID agent as well as in the cloud.
+> The _HelloID-Conn-Prov-Target-Spacewell-Axxerion connector is built for both Windows PowerShell 5.1 and PowerShell Core 7. This means the connector can be executed using the _On-Premises_ HelloID agent as well as in the cloud.
 
 ### Remarks
 
