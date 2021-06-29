@@ -1,6 +1,5 @@
-# HelloID-Conn-Prov-Target-Axxerion-Spacewell
+# HelloID-Conn-Prov-Target-Spacewell-Axxerion
 
-<p align="center">
   <img src="/assets/logo.png">
 </p>
 
