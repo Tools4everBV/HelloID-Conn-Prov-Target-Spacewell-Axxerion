@@ -1,0 +1,45 @@
+[
+    {
+        "key": "Username",
+        "type": "input",
+        "defaultValue": "",
+        "templateOptions": {
+            "label": "UserName",
+            "description": "The username of the user who has rights to access the API",
+            "required": true
+        }
+    },
+    {
+        "key": "Password",
+        "type": "input",
+        "defaultValue": "",
+        "templateOptions": {
+            "label": "Password",
+            "description": "The password for the user who has rights to access the API",
+            "type": "password",
+            "placeholder": "",
+            "required": true
+        }
+    },
+    {
+        "key": "BaseUrl",
+        "type": "input",
+        "defaultValue": "",
+        "templateOptions": {
+            "label": "BaseUrl",
+            "placeholder": "https://<customer>.axxerion.com",
+            "description": "The URL to the Spaxewell Axxerion environment",
+            "required": true
+        }
+    },
+    {
+        "key": "Customer",
+        "type": "input",
+        "defaultValue": "",
+        "templateOptions": {
+            "label": "Customer",
+            "description": "The customer name. (This is the same name as the <customer> in the URL)",
+            "required": true
+        }
+    }
+]
