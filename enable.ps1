@@ -12,7 +12,7 @@ $p = $person | ConvertFrom-Json
 $success = $false
 $auditLogs = New-Object Collections.Generic.List[PSCustomObject]
 
-$email = $p.Accounts.MicrosoftAzureAD.Mail
+$email = $p.Accounts.MicrosoftActiveDirectory.Mail
 $account = [PSCustomObject]@{
     id           = $p.ExternalId;
     userName     = $p.ExternalId;
