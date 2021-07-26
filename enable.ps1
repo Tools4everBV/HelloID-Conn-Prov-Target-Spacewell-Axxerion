@@ -12,13 +12,18 @@ $p = $person | ConvertFrom-Json
 $success = $false
 $auditLogs = New-Object Collections.Generic.List[PSCustomObject]
 
+$email = $p.Accounts.MicrosoftAzureAD.Mail
 $account = [PSCustomObject]@{
-    id           = $p.ExternalId
-    userName     = $p.ExternalId
-    givenName    = $p.Name.GivenName
-    familyName   = $p.Name.FamilyName
-    emailAddress = $p.Contact.Business.Email
+    id           = $p.ExternalId;
+    userName     = $p.ExternalId;
+    givenName    = $p.Name.Nickname;
+    familyName   = $p.Name.FamilyName;
+    cost_center =  $P.PrimaryContract.CostCenter.Name
+    job_title = $p.PrimaryContract.Title.Name;
+    emailAddress = $email;
 }
+
+
 
 #region helper functions
 function Resolve-HTTPError {
