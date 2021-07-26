@@ -11,13 +11,41 @@ $p = $person | ConvertFrom-Json
 $success = $false
 $auditLogs = New-Object Collections.Generic.List[PSCustomObject]
 
-$account = [PSCustomObject]@{
-    id           = $p.ExternalId
-    userName     = $p.ExternalId
-    givenName    = $p.Name.GivenName
-    familyName   = $p.Name.FamilyName
-    emailAddress = $p.Contact.Business.Email
+$prefix = ""
+if(-Not([string]::IsNullOrEmpty($p.Name.FamilyNamePrefix)))
+{
+    $prefix = $p.Name.FamilyNamePrefix + " "
 }
+
+$partnerprefix = ""
+if(-Not([string]::IsNullOrEmpty($p.Name.FamilyNamePartnerPrefix)))
+{
+    $partnerprefix = $p.Name.FamilyNamePartnerPrefix + " "
+}
+
+switch($p.Name.Convention)
+{
+    "B" {$surname += $p.Name.FamilyName; $AxPrefix = $prefix}
+    "P" {$surname += $p.Name.FamilyNamePartner; $AxPrefix = $partnerprefix}
+    "BP" {$surname += $p.Name.FamilyName + " - " + $partnerprefix + $p.Name.FamilyNamePartner; $AxPrefix = $prefix}
+    "PB" {$surname += $p.Name.FamilyNamePartner + " - " + $prefix + $p.Name.FamilyName ; $AxPrefix = $partnerprefix}
+    default {$surname += $p.Name.FamilyName; $AxPrefix = $prefix}
+}
+
+
+$email = $p.Accounts.MicrosoftActiveDirectory.Mail
+$account = [PSCustomObject]@{
+    id           = $p.ExternalId;
+    userName     = $p.ExternalId;
+    givenName    = $p.Name.Nickname;
+    familyName   = $surname;
+    prefix          = $AxPrefix;
+    cost_center =  $P.PrimaryContract.CostCenter.Name
+    job_title = $p.PrimaryContract.Title.Name;
+    emailAddress = $email;
+}
+
+
 
 #region helper functions
 function Resolve-HTTPError {
@@ -55,11 +83,14 @@ if (-not($dryRun -eq $true)) {
         $clobMBValue = @{
             action = 'Account Update'
             body = @{
-                id         = $account.id
-                username   = $account.userName
-                email      = $acount.emailAddress
-                first_name = $account.firstName
-                last_name  = $account.lastName
+                id         = $account.id;
+                username   = $account.userName;
+                email      = $account.emailAddress;
+                first_name = $account.givenName;
+                last_name  = $account.familyName;
+                prefix      = $account.prefix;
+                cost_center = $account.cost_center;
+                job_title = $account.job_title;
             }
         } | ConvertTo-Json
 
@@ -80,7 +111,7 @@ if (-not($dryRun -eq $true)) {
             Headers = $headers
             Method  = 'POST'
         }
-        $updateResponse = Invoke-SAXRestMethod @splatParams
+        $updateResponse = Invoke-RestMethod @splatParams
         if ($updateResponse.id){
             $success = $true
             $auditLogs.Add([PSCustomObject]@{
