@@ -2,6 +2,9 @@
 # HelloID-Conn-Prov-Target-Spacewell-Axxerion-Entitlements
 #
 # Version: 1.0.0.0
+
+# Make sure you update rownr 47! -> [Customer]
+
 ##########################################################
 $VerbosePreference = "Continue"
 
