@@ -49,7 +49,7 @@ if (-not($dryRun -eq $true)) {
         $clobMBValue = @{
             action = 'Entitlement Grant'
             body = @{
-                id = $aRef
+                id = $($p.ExternalId)
                 entitlement = $($pRef.Id)
             }
         } | ConvertTo-Json
