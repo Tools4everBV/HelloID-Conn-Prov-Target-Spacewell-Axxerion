@@ -107,7 +107,7 @@ if (-not($dryRun -eq $true)) {
 
         $splatParams = @{
             Uri     = "$($c.BaseUrl)/webservices/$($c.Customer)/rest/functions/createupdate/ImportItem"
-            Body    = $body
+            Body    = ([System.Text.Encoding]::UTF8.GetBytes($body))
             Headers = $headers
             Method  = 'POST'
         }
@@ -142,6 +142,12 @@ $result = [PSCustomObject]@{
     Success   = $success
     Account   = $account
     AuditLogs = $auditLogs
+    
+        ExportData = [PSCustomObject]@{
+        displayName = $account.id;
+        userName = $account.id;
+        email = $account.emailAddress;
+    };
 }
 
 Write-Output $result | ConvertTo-Json -Depth 10
