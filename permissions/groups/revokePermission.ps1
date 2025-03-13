@@ -1,7 +1,7 @@
-##################################################
-# HelloID-Conn-Prov-Target-Spacewell-Axxerion-V2-Delete
+#################################################################
+# HelloID-Conn-Prov-Target-Spacewell-Axxerion-V2-RevokePermission-Group
 # PowerShell V2
-##################################################
+#################################################################
 
 # Enable TLS1.2
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor [System.Net.SecurityProtocolType]::Tls12
@@ -44,6 +44,7 @@ function Resolve-Spacewell-Axxerion-V2Error {
 }
 #endregion
 
+# Begin
 try {
     # Verify if [aRef] has a value
     if ([string]::IsNullOrEmpty($($actionContext.References.Account))) {
@@ -68,7 +69,7 @@ try {
     $correlatedAccount = Invoke-RestMethod @splatCompleterReportResultFunction
 
     if ($correlatedAccount.data.count -eq 1) {
-        $action = 'DeleteAccount'
+        $action = 'RevokePermission'
     } elseif ($correlatedAccount.data.count -eq 0) {
         $action = 'NotFound'
     } else {
@@ -77,33 +78,35 @@ try {
 
     # Process
     switch ($action) {
-        'DeleteAccount' {
+        'RevokePermission' {
             if (-not($actionContext.DryRun -eq $true)) {
-                Write-Information "Deleting Spacewell-Axxerion-V2 account with accountReference: [$($actionContext.References.Account)]"
-                $bodyBase64 = @{ email = $actionContext.References.Account } | ConvertTo-Json
-                $accountObjBase64 = [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($bodyBase64))
-                $splatDeleteParams = @{
+                Write-Information "Revoking Spacewell-Axxerion-V2 permission: [$($actionContext.References.Permission.DisplayName)] - [$($actionContext.References.Permission.Reference)]"
+                $bodyJson = @{
+                    email = $actionContext.References.Account
+                    entitlement = $actionContext.References.Permission.Reference
+                } | ConvertTo-Json
+                $bodyJsonBase64 = [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($bodyJson))
+                $splatParams = @{
                     Uri    = "$($actionContext.Configuration.BaseUrl)/webservices/duwo/rest/functions/createupdate/ImportItem"
                     Method = 'POST'
                     Body   = @{
                         datasource  = 'HelloID'
-                        stringValue = 'AccountRevoke'
-                        clobMBValue = $accountObjBase64
+                        stringValue = 'EntitlementRevoke'
+                        clobMBValue = $bodyJsonBase64
                     } | ConvertTo-Json -Depth 10
                     Headers = $headers
                     ContentType = 'application/json'
                 }
-                $null = Invoke-RestMethod @splatDeleteParams
+                $null = Invoke-RestMethod @splatParams
             } else {
-                Write-Information "[DryRun] Delete Spacewell-Axxerion-V2 account with accountReference: [$($actionContext.References.Account)], will be executed during enforcement"
+                Write-Information "[DryRun] Revoke Spacewell-Axxerion-V2 permission: [$($actionContext.References.Permission.DisplayName)] - [$($actionContext.References.Permission.Reference)], will be executed during enforcement"
             }
 
             $outputContext.Success = $true
             $outputContext.AuditLogs.Add([PSCustomObject]@{
-                    Message = 'Delete account was successful'
+                    Message = "Revoke permission [$($actionContext.References.Permission.DisplayName)] was successful"
                     IsError = $false
                 })
-            break
         }
 
         'NotFound' {
@@ -122,14 +125,14 @@ try {
     if ($($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or
         $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
         $errorObj = Resolve-Spacewell-Axxerion-V2Error -ErrorObject $ex
-        $auditMessage = "Could not delete Spacewell-Axxerion-V2 account. Error: $($errorObj.FriendlyMessage)"
+        $auditMessage = "Could not revoke Spacewell-Axxerion-V2 permission. Error: $($errorObj.FriendlyMessage)"
         Write-Warning "Error at Line '$($errorObj.ScriptLineNumber)': $($errorObj.Line). Error: $($errorObj.ErrorDetails)"
     } else {
-        $auditMessage = "Could not delete Spacewell-Axxerion-V2 account. Error: $($_.Exception.Message)"
+        $auditMessage = "Could not revoke Spacewell-Axxerion-V2 permission. Error: $($_.Exception.Message)"
         Write-Warning "Error at Line '$($ex.InvocationInfo.ScriptLineNumber)': $($ex.InvocationInfo.Line). Error: $($ex.Exception.Message)"
     }
     $outputContext.AuditLogs.Add([PSCustomObject]@{
-            Message = $auditMessage
-            IsError = $true
-        })
+        Message = $auditMessage
+        IsError = $true
+    })
 }

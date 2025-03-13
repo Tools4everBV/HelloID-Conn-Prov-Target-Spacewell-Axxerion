@@ -1,153 +1,137 @@
-##########################################################
-# HelloID-Conn-Prov-Target-Spacewell-Axxerion-Update
-#
-# Version: 1.0.0.0
-##########################################################
-$VerbosePreference = "Continue"
+#################################################
+# HelloID-Conn-Prov-Target-Spacewell-Axxerion-V2-Update
+# PowerShell V2
+#################################################
 
-# Initialize default value's
-$c = $configuration | ConvertFrom-Json
-$p = $person | ConvertFrom-Json
-$success = $false
-$auditLogs = New-Object Collections.Generic.List[PSCustomObject]
+# Enable TLS1.2
+[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor [System.Net.SecurityProtocolType]::Tls12
 
-$prefix = ""
-if(-Not([string]::IsNullOrEmpty($p.Name.FamilyNamePrefix)))
-{
-    $prefix = $p.Name.FamilyNamePrefix + " "
-}
-
-$partnerprefix = ""
-if(-Not([string]::IsNullOrEmpty($p.Name.FamilyNamePartnerPrefix)))
-{
-    $partnerprefix = $p.Name.FamilyNamePartnerPrefix + " "
-}
-
-switch($p.Name.Convention)
-{
-    "B" {$surname += $p.Name.FamilyName; $AxPrefix = $prefix}
-    "P" {$surname += $p.Name.FamilyNamePartner; $AxPrefix = $partnerprefix}
-    "BP" {$surname += $p.Name.FamilyName + " - " + $partnerprefix + $p.Name.FamilyNamePartner; $AxPrefix = $prefix}
-    "PB" {$surname += $p.Name.FamilyNamePartner + " - " + $prefix + $p.Name.FamilyName ; $AxPrefix = $partnerprefix}
-    default {$surname += $p.Name.FamilyName; $AxPrefix = $prefix}
-}
-
-
-$email = $p.Accounts.MicrosoftActiveDirectory.Mail
-$account = [PSCustomObject]@{
-    id           = $p.ExternalId;
-    userName     = $p.ExternalId;
-    givenName    = $p.Name.Nickname;
-    familyName   = $surname;
-    prefix          = $AxPrefix;
-    cost_center =  $P.PrimaryContract.CostCenter.Name
-    job_title = $p.PrimaryContract.Title.Name;
-    emailAddress = $email;
-}
-
-
-
-#region helper functions
-function Resolve-HTTPError {
+#region functions
+function Resolve-Spacewell-Axxerion-V2Error {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory,
-            ValueFromPipeline
-        )]
-        [object]$ErrorObject
+        [Parameter(Mandatory)]
+        [object]
+        $ErrorObject
     )
     process {
-        $HttpErrorObj = @{
-            FullyQualifiedErrorId = $ErrorObject.FullyQualifiedErrorId
-            InvocationInfo        = $ErrorObject.InvocationInfo.MyCommand
-            TargetObject          = $ErrorObject.TargetObject.RequestUri
-            StackTrace            = $ErrorObject.ScriptStackTrace
+        $httpErrorObj = [PSCustomObject]@{
+            ScriptLineNumber = $ErrorObject.InvocationInfo.ScriptLineNumber
+            Line             = $ErrorObject.InvocationInfo.Line
+            ErrorDetails     = $ErrorObject.Exception.Message
+            FriendlyMessage  = $ErrorObject.Exception.Message
         }
-        if ($ErrorObject.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') {
-            $HttpErrorObj['ErrorMessage'] = $ErrorObject.ErrorDetails.Message
+        if (-not [string]::IsNullOrEmpty($ErrorObject.ErrorDetails.Message)) {
+            $httpErrorObj.ErrorDetails = $ErrorObject.ErrorDetails.Message
         } elseif ($ErrorObject.Exception.GetType().FullName -eq 'System.Net.WebException') {
-            $stream = $ErrorObject.Exception.Response.GetResponseStream()
-            $stream.Position = 0
-            $streamReader = New-Object System.IO.StreamReader $Stream
-            $errorResponse = $StreamReader.ReadToEnd()
-            $HttpErrorObj['ErrorMessage'] = $errorResponse
+            if ($null -ne $ErrorObject.Exception.Response) {
+                $streamReaderResponse = [System.IO.StreamReader]::new($ErrorObject.Exception.Response.GetResponseStream()).ReadToEnd()
+                if (-not [string]::IsNullOrEmpty($streamReaderResponse)) {
+                    $httpErrorObj.ErrorDetails = $streamReaderResponse
+                }
+            }
         }
-        Write-Output $HttpErrorObj
+        try {
+            $errorDetailsObject = ($httpErrorObj.ErrorDetails | ConvertFrom-Json)
+            # Make sure to inspect the error result object and add only the error message as a FriendlyMessage.
+            # $httpErrorObj.FriendlyMessage = $errorDetailsObject.message
+            $httpErrorObj.FriendlyMessage = $httpErrorObj.ErrorDetails # Temporarily assignment
+        } catch {
+            $httpErrorObj.FriendlyMessage = $httpErrorObj.ErrorDetails
+        }
+        Write-Output $httpErrorObj
     }
 }
 #endregion
 
-if (-not($dryRun -eq $true)) {
-    try {
-        Write-Verbose "Updating Axxerion user '$($p.DisplayName)'"
-        $clobMBValue = @{
-            action = 'Account Update'
-            body = @{
-                id         = $account.id;
-                username   = $account.userName;
-                email      = $account.emailAddress;
-                first_name = $account.givenName;
-                last_name  = $account.familyName;
-                prefix      = $account.prefix;
-                cost_center = $account.cost_center;
-                job_title = $account.job_title;
-            }
-        } | ConvertTo-Json
+try {
+    # Verify if [aRef] has a value
+    if ([string]::IsNullOrEmpty($($actionContext.References.Account))) {
+        throw 'The account reference could not be found'
+    }
 
-        $body = @{
-            datasource  = 'HelloID'
-            clobMBValue = $clobMBValue
-        } | ConvertTo-Json
+    Write-Information 'Creating authentication headers'
+    $headers = [System.Collections.Generic.Dictionary[string, string]]::new()
+    $headers.Add("Authorization", "Basic $([System.Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes("$($actionContext.Configuration.UserName):$($actionContext.Configuration.Password)")))")
 
-        $authorization = "$($c.UserName):$($c.Password)"
-        $base64Credentials = [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($authorization))
-        $headers = @{
-            "Authorization" = "Basic $base64Credentials"
-        }
+    Write-Information 'Verifying if a Spacewell-Axxerion-V2 account exists'
+    $splatCompleterReportResultFunction = @{
+        Uri = "$($actionContext.Configuration.BaseUrl)/webservices/duwo/rest/functions/completereportresult"
+        Method = 'POST'
+        Body = [PSCustomObject]@{
+            reference    = $actionContext.Configuration.UserReference
+            filterFields = @('externalReference')
+            filterValues = @("$($actionContext.References.Account)")
+        } | ConvertTo-Json -Depth 10
+        Headers = $headers
+    }
+    $correlatedAccount = Invoke-RestMethod @splatCompleterReportResultFunction
 
-        $splatParams = @{
-            Uri     = "$($c.BaseUrl)/webservices/$($c.Customer)/rest/functions/createupdate/ImportItem"
-            Body    = ([System.Text.Encoding]::UTF8.GetBytes($body))
-            Headers = $headers
-            Method  = 'POST'
+    # Always compare the account against the current account in target system
+    if ($null -ne $correlatedAccount) {
+        $splatCompareProperties = @{
+            ReferenceObject  = @($correlatedAccount.PSObject.Properties)
+            DifferenceObject = @($actionContext.Data.PSObject.Properties)
         }
-        $updateResponse = Invoke-RestMethod @splatParams
-        if ($updateResponse.id){
-            $success = $true
-            $auditLogs.Add([PSCustomObject]@{
-                Action  = "UpdateAccount"
-                Message = "Account for '$($p.DisplayName)' successfully updated"
-                IsError = $false
-            })
-        }
-    } catch {
-        $ex = $PSItem
-        $success = $false
-        if ( $($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
-            $errorObject = Resolve-HTTPError -Error $ex
-            $auditMessage = "Could not update user account for '$($p.DisplayName)', Error $($errorObject.ErrorMessage)"
+        $propertiesChanged = Compare-Object @splatCompareProperties -PassThru | Where-Object { $_.SideIndicator -eq '=>' }
+        if ($propertiesChanged) {
+            $action = 'UpdateAccount'
         } else {
-            $auditMessage = "Could not update user account for '$($p.DisplayName)', Error: $($ex.Exception.Message)"
+            $action = 'NoChanges'
         }
-        $auditLogs.Add([PSCustomObject]@{
-            Action  = "UpdateAccount"
+    } else {
+        $action = 'NotFound'
+    }
+
+    # Process
+    switch ($action) {
+        'UpdateAccount'{
+            if (-not($actionContext.DryRun -eq $true)) {
+                Write-Information "Updating Spacewell-Axxerion-V2 account with accountReference: [$($actionContext.References.Account)]"
+                $actionContext.Data.email = $actionContext.References.Account
+                $actionContextDataJson = $actionContext.Data | ConvertTo-Json
+                $accountObjBase64 = [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($actionContextDataJson))
+                $splatUpdateParams = @{
+                    Uri    = "$($actionContext.Configuration.BaseUrl)/webservices/duwo/rest/functions/createupdate/ImportItem"
+                    Method = 'POST'
+                    Body   = @{
+                        datasource  = 'HelloID'
+                        stringValue = 'AccountUpdate'
+                        clobMBValue = $accountObjBase64
+                    } | ConvertTo-Json -Depth 10
+                    Headers = $headers
+                    ContentType = 'application/json'
+                }
+                $updatedAccount = Invoke-RestMethod @splatUpdateParams
+                $outputContext.Data = $updatedAccount
+            } else {
+                Write-Information "[DryRun] Update Spacewell-Axxerion-V2 account with accountReference: [$($actionContext.References.Account)], will be executed during enforcement"
+            }
+        }
+        'NotFound' {
+            Write-Information "Spacewell-Axxerion-V2 account: [$($actionContext.References.Account)] could not be found, possibly indicating that it could be deleted"
+            $outputContext.Success = $true
+            $outputContext.AuditLogs.Add([PSCustomObject]@{
+                    Message = "Spacewell-Axxerion-V2 account: [$($actionContext.References.Account)] could not be found, possibly indicating that it could be deleted"
+                    IsError = $false
+                })
+            break
+        }
+    }
+} catch {
+    $outputContext.Success  = $false
+    $ex = $PSItem
+    if ($($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or
+        $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
+        $errorObj = Resolve-Spacewell-Axxerion-V2Error -ErrorObject $ex
+        $auditMessage = "Could not update Spacewell-Axxerion-V2 account. Error: $($errorObj.FriendlyMessage)"
+        Write-Warning "Error at Line '$($errorObj.ScriptLineNumber)': $($errorObj.Line). Error: $($errorObj.ErrorDetails)"
+    } else {
+        $auditMessage = "Could not update Spacewell-Axxerion-V2 account. Error: $($ex.Exception.Message)"
+        Write-Warning "Error at Line '$($ex.InvocationInfo.ScriptLineNumber)': $($ex.InvocationInfo.Line). Error: $($ex.Exception.Message)"
+    }
+    $outputContext.AuditLogs.Add([PSCustomObject]@{
             Message = $auditMessage
             IsError = $true
         })
-        Write-Verbose $auditLogs.Message
-    }
 }
-
-$result = [PSCustomObject]@{
-    Success   = $success
-    Account   = $account
-    AuditLogs = $auditLogs
-    
-        ExportData = [PSCustomObject]@{
-        displayName = $account.id;
-        userName = $account.id;
-        email = $account.emailAddress;
-    };
-}
-
-Write-Output $result | ConvertTo-Json -Depth 10
