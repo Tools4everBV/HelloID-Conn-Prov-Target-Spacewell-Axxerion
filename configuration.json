@@ -31,15 +31,5 @@
             "description": "The URL to the Spaxewell Axxerion environment",
             "required": true
         }
-    },
-    {
-        "key": "Customer",
-        "type": "input",
-        "defaultValue": "",
-        "templateOptions": {
-            "label": "Customer",
-            "description": "The customer name. (This is the same name as the <customer> in the URL)",
-            "required": true
-        }
     }
 ]
