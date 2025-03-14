@@ -61,10 +61,8 @@ try {
     foreach ($permission in $retrievedPermissions.data) {
         $outputContext.Permissions.Add(
             @{
-                DisplayName    = $permission.Referentie
-                Identification = @{
-                    Reference   = $permission.id
-                }
+                DisplayName    = $permission.Naam
+                Identification = $permission.Referentie
             }
         )
     }
