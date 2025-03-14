@@ -64,7 +64,6 @@ try {
                 DisplayName    = $permission.Referentie
                 Identification = @{
                     Reference   = $permission.id
-                    DisplayName = $permission.Naam
                 }
             }
         )
