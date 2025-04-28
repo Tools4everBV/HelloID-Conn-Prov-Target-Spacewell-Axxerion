@@ -62,7 +62,9 @@ try {
         $outputContext.Permissions.Add(
             @{
                 DisplayName    = $permission.Naam
-                Identification = $permission.Referentie
+                Identification = @{
+                    Reference = $permission.Referentie
+                }
             }
         )
     }
