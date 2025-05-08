@@ -56,9 +56,9 @@ try {
 
     Write-Information 'Verifying if a Spacewell-Axxerion-V2 account exists'
     $splatCompleterReportResultFunction = @{
-        Uri = "$($actionContext.Configuration.BaseUrl)/webservices/duwo/rest/functions/completereportresult"
-        Method = 'POST'
-        Body = [PSCustomObject]@{
+        Uri     = "$($actionContext.Configuration.BaseUrl)/webservices/$($actionContext.Configuration.OrganizationReference)/rest/functions/completereportresult"
+        Method  = 'POST'
+        Body    = [PSCustomObject]@{
             reference    = $actionContext.Configuration.UserReference
             filterFields = @('externalReference')
             filterValues = @("$($actionContext.References.Account)")
@@ -83,14 +83,14 @@ try {
                 $bodyBase64 = @{ email = $actionContext.References.Account } | ConvertTo-Json
                 $accountObjBase64 = [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($bodyBase64))
                 $splatEnableParams = @{
-                    Uri    = "$($actionContext.Configuration.BaseUrl)/webservices/duwo/rest/functions/createupdate/ImportItem"
-                    Method = 'POST'
-                    Body   = @{
+                    Uri         = "$($actionContext.Configuration.BaseUrl)/webservices/$($actionContext.Configuration.OrganizationReference)/rest/functions/createupdate/ImportItem"
+                    Method      = 'POST'
+                    Body        = @{
                         datasource  = 'HelloID'
                         stringValue = 'AccountAccessGrant'
                         clobMBValue = $accountObjBase64
                     } | ConvertTo-Json -Depth 10
-                    Headers = $headers
+                    Headers     = $headers
                     ContentType = 'application/json'
                 }
                 $null = Invoke-RestMethod @splatEnableParams
@@ -130,7 +130,7 @@ try {
         Write-Warning "Error at Line '$($ex.InvocationInfo.ScriptLineNumber)': $($ex.InvocationInfo.Line). Error: $($ex.Exception.Message)"
     }
     $outputContext.AuditLogs.Add([PSCustomObject]@{
-        Message = $auditMessage
-        IsError = $true
-    })
+            Message = $auditMessage
+            IsError = $true
+        })
 }

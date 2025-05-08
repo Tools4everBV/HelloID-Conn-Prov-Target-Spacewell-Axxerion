@@ -4,7 +4,7 @@
 > Spacewell Axxerion uses a generic User API which needs to be configured for each customer by an Spacewell consultant. Therefore this connector will **not work** out of the box without assistance from a Spacewell consultant and HelloID consultant
 
 > [!WARNING]
-> This connector has not been fully tested. Changes will have to be made according to the customer environment
+> This connector has been fully tested. Specific changes will have to be made according to the customer environment
 
 > [!IMPORTANT]
 > This repository contains the connector and configuration code only. The implementer is responsible to acquire the connection details such as username, password, certificate, etc. You might even need to sign a contract or agreement with the supplier before implementing this connector. Please contact the client's application manager to coordinate the connector requirements.
@@ -44,15 +44,32 @@
 
 _HelloID-Conn-Prov-Target-Spacewell-Axxerion-V2_ is a _target_ connector. _Spacewell-Axxerion-V2_ provides a set of REST API's that allow you to programmatically interact with its data.
 
+## Supported features
+
+The following features are available:
+
+| Feature                                   | Supported | Actions                                 | Remarks |
+| ----------------------------------------- | --------- | --------------------------------------- | ------- |
+| **Account Lifecycle**                     | ✅        | Create, Update, Enable, Disable, Delete |         |
+| **Permissions**                           | ✅        | Retrieve, Grant, Revoke                 | Static  |
+| **Resources**                             | ❌        | -                                       |         |
+| **Entitlement Import: Accounts**          | ✅        | -                                       |         |
+| **Entitlement Import: Account Access**    | ❌        | -                                       |         |
+| **Entitlement Import: Permissions**       | ❌        | -                                       |         |
+| **Governance Reconciliation Resolutions** | ✅        | -                                       |         |
+
 ### Connection settings
 
 The following settings are required to connect to the API.
 
-| Setting       | Description                                                     |
-| ------------- | --------------------------------------------------------------- |
-| Username      | The username of the user who has rights to access the API       |
-| Password      | The password for the user who has rights to access the API      |
-| BaseUrl       | The URL to the Spaxewell Axxerion environment                   |
+| Setting               | Description                                                                              |
+| --------------------- | ---------------------------------------------------------------------------------------- |
+| Username              | The username of the user who has rights to access the API. This is case-sensitive        |
+| Password              | The password for the user who has rights to access the API                               |
+| BaseUrl               | The URL to the Spaxewell Axxerion environment                                            |
+| UserReference         | The name of the Spacewell Axxerion report which provides user information                |
+| OrganizationReference | The name of the organization used in the endpoints of the Spaxewell Axxerion environment |
+| ProfileReference      | The name of the Spacewell Axxerion report which provides profilegroup information        |
 
 ### Correlation configuration
 
@@ -64,26 +81,7 @@ The correlation configuration is used to specify which properties will be used t
 | Person correlation field  | `Accounts.MicrosoftActiveDirectory.mail` |
 | Account correlation field | `Email`                                  |
 
-> [!TIP]
-> _For more information on correlation, please refer to our correlation [documentation](https://docs.helloid.com/en/provisioning/target-systems/powershell-v2-target-systems/correlation.html) pages_.
-
-### Available lifecycle actions
-
-The following lifecycle actions are available:
-
-| Action                                  | Description                                                                     |
-| --------------------------------------- | ------------------------------------------------------------------------------- |
-| create.ps1                              | Creates a new account.                                                          |
-| delete.ps1                              | Removes an existing account or entity.                                          |
-| disable.ps1                             | Disables an account, preventing access without permanent removal.               |
-| enable.ps1                              | Enables an account, granting access.                                            |
-| update.ps1                              | Updates the attributes of an account.                                           |
-| permissions/groups/grantPermission.ps1  | Grants specific permissions to an account.                                      |
-| permissions/groups/revokePermission.ps1 | Revokes specific permissions from an account.                                   |
-| permissions/groups/permissions.ps1      | Retrieves all available permissions.                                            |
-| resources/groups/resources.ps1          | Manages resources, such as creating groups.                                     |
-| configuration.json                      | Contains the connection settings and general configuration for the connector.   |
-| fieldMapping.json                       | Defines mappings between person fields and target system person account fields. |
+> [!TIP] > _For more information on correlation, please refer to our correlation [documentation](https://docs.helloid.com/en/provisioning/target-systems/powershell-v2-target-systems/correlation.html) pages_.
 
 ### Field mapping
 
@@ -97,7 +95,7 @@ The correlation is based on the `email` address. Since this is the only _unique_
 
 ### `id` returned when creating a user
 
-When creating a user an `id` will be returned. However this is __not__ the internal database `id` of the user but merely a reference to internal logging.
+When creating a user an `id` will be returned. However this is **not** the internal database `id` of the user but merely a reference to internal logging.
 
 ### Error handling
 
@@ -113,10 +111,10 @@ Each `POST` request to `rest/functions/createupdate/ImportItem` requires a `_clo
 
 ```json
 {
-    "username": "JDoe",
-    "email": "jdoe@example",
-    "first_name": "John",
-    "last_name": "Doe"
+  "username": "JDoe",
+  "email": "jdoe@example",
+  "first_name": "John",
+  "last_name": "Doe"
 }
 ```
 
@@ -124,9 +122,9 @@ Each `POST` request to `rest/functions/createupdate/ImportItem` requires a `_clo
 
 ```json
 {
-    "datasource": "HelloID",
-    "stringValue":"AccountGrant",
-    "clobMBValue": "ew0KICAgICJ1c2VybmFtZSI6ICJKRG9lIiwNCiAgICAiZW1haWwiOiAiamRvZUBleGFtcGxlIiwNCiAgICAiZmlyc3RfbmFtZSI6ICJKb2huIiwNCiAgICAibGFzdF9uYW1lIjogIkRvZSINCn0="
+  "datasource": "HelloID",
+  "stringValue": "AccountGrant",
+  "clobMBValue": "ew0KICAgICJ1c2VybmFtZSI6ICJKRG9lIiwNCiAgICAiZW1haWwiOiAiamRvZUBleGFtcGxlIiwNCiAgICAiZmlyc3RfbmFtZSI6ICJKb2huIiwNCiAgICAibGFzdF9uYW1lIjogIkRvZSINCn0="
 }
 ```
 
@@ -136,10 +134,10 @@ Each `POST` request to `rest/functions/createupdate/ImportItem` requires a `_clo
 
 ```json
 {
-    "username": "JDoe",
-    "email": "jdoe@example",
-    "first_name": "John",
-    "last_name": "Doe"
+  "username": "JDoe",
+  "email": "jdoe@example",
+  "first_name": "John",
+  "last_name": "Doe"
 }
 ```
 
@@ -147,9 +145,9 @@ Each `POST` request to `rest/functions/createupdate/ImportItem` requires a `_clo
 
 ```json
 {
-    "datasource": "HelloID",
-    "stringValue":"AccountUpdate",
-    "clobMBValue": "ew0KICAgICJ1c2VybmFtZSI6ICJKRG9lIiwNCiAgICAiZW1haWwiOiAiamRvZUBleGFtcGxlIiwNCiAgICAiZmlyc3RfbmFtZSI6ICJKb2huIiwNCiAgICAibGFzdF9uYW1lIjogIkRvZSINCn0="
+  "datasource": "HelloID",
+  "stringValue": "AccountUpdate",
+  "clobMBValue": "ew0KICAgICJ1c2VybmFtZSI6ICJKRG9lIiwNCiAgICAiZW1haWwiOiAiamRvZUBleGFtcGxlIiwNCiAgICAiZmlyc3RfbmFtZSI6ICJKb2huIiwNCiAgICAibGFzdF9uYW1lIjogIkRvZSINCn0="
 }
 ```
 
@@ -159,7 +157,7 @@ Each `POST` request to `rest/functions/createupdate/ImportItem` requires a `_clo
 
 ```json
 {
-    "Email": "JDoe@example"
+  "Email": "JDoe@example"
 }
 ```
 
@@ -167,9 +165,9 @@ Each `POST` request to `rest/functions/createupdate/ImportItem` requires a `_clo
 
 ```json
 {
-    "datasource": "HelloID",
-    "stringValue": "AccountAccessGrant",
-    "clobMBValue": "ew0KICAgICJFbWFpbCI6ICJKRG9lQGV4YW1wbGUiDQp9"
+  "datasource": "HelloID",
+  "stringValue": "AccountAccessGrant",
+  "clobMBValue": "ew0KICAgICJFbWFpbCI6ICJKRG9lQGV4YW1wbGUiDQp9"
 }
 ```
 
@@ -179,7 +177,7 @@ Each `POST` request to `rest/functions/createupdate/ImportItem` requires a `_clo
 
 ```json
 {
-    "Email": "JDoe@example"
+  "Email": "JDoe@example"
 }
 ```
 
@@ -187,9 +185,9 @@ Each `POST` request to `rest/functions/createupdate/ImportItem` requires a `_clo
 
 ```json
 {
-    "datasource": "HelloID",
-    "stringValue": "AccountAccessRevoke",
-    "clobMBValue": "ew0KICAgICJFbWFpbCI6ICJKRG9lQGV4YW1wbGUiDQp9"
+  "datasource": "HelloID",
+  "stringValue": "AccountAccessRevoke",
+  "clobMBValue": "ew0KICAgICJFbWFpbCI6ICJKRG9lQGV4YW1wbGUiDQp9"
 }
 ```
 
@@ -201,8 +199,8 @@ The `entitlement` is the `id` of the permission.
 
 ```json
 {
-    "email": "JDoe@example",
-    "entitlement": "1510000000000002"
+  "email": "JDoe@example",
+  "entitlement": "1510000000000002"
 }
 ```
 
@@ -210,9 +208,9 @@ The `entitlement` is the `id` of the permission.
 
 ```json
 {
-    "datasource": "HelloID",
-    "stringValue":"EntitlementGrant",
-    "clobMBValue": "ew0KICAgICJlbWFpbCI6ICJKRG9lQGV4YW1wbGUiLA0KICAgICJlbnRpdGxlbWVudCI6ICIxNTEwMDAwMDAwMDAwMDAyIg0KfQ=="
+  "datasource": "HelloID",
+  "stringValue": "EntitlementGrant",
+  "clobMBValue": "ew0KICAgICJlbWFpbCI6ICJKRG9lQGV4YW1wbGUiLA0KICAgICJlbnRpdGxlbWVudCI6ICIxNTEwMDAwMDAwMDAwMDAyIg0KfQ=="
 }
 ```
 
@@ -224,8 +222,8 @@ The `entitlement` is the `id` of the permission.
 
 ```json
 {
-    "email": "JDoe@example",
-    "entitlement": "1510000000000002"
+  "email": "JDoe@example",
+  "entitlement": "1510000000000002"
 }
 ```
 
@@ -233,15 +231,15 @@ The `entitlement` is the `id` of the permission.
 
 ```json
 {
-    "datasource": "HelloID",
-    "stringValue":"EntitlementRevoke",
-    "clobMBValue": "ew0KICAgICJlbWFpbCI6ICJKRG9lQGV4YW1wbGUiLA0KICAgICJlbnRpdGxlbWVudCI6ICIxNTEwMDAwMDAwMDAwMDAyIg0KfQ=="
+  "datasource": "HelloID",
+  "stringValue": "EntitlementRevoke",
+  "clobMBValue": "ew0KICAgICJlbWFpbCI6ICJKRG9lQGV4YW1wbGUiLA0KICAgICJlbnRpdGxlbWVudCI6ICIxNTEwMDAwMDAwMDAwMDAyIg0KfQ=="
 }
 ```
 
 ### Retrieving data
 
-Data will need to be retrieved using a `POST` to  `rest/functions/completereportresult/`. The JSON payload must contain a _reference_ that corresponds to the action. The name of the _reference_ might be subject to change.
+Data will need to be retrieved using a `POST` to `rest/functions/completereportresult/`. The JSON payload must contain a _reference_ that corresponds to the action. The name of the _reference_ might be subject to change.
 
 #### Retrieve user(s)
 
@@ -249,13 +247,9 @@ Retrieve a single user based on the `externalReference` which is mapped to the `
 
 ```json
 {
-	"reference":"HELLOID-USERS",
-    "filterFields": [
-        "externalReference"
-    ],
-    "filterValues": [
-        "name@example"
-    ]
+  "reference": "HELLOID-USERS",
+  "filterFields": ["externalReference"],
+  "filterValues": ["name@example"]
 }
 ```
 
@@ -265,7 +259,7 @@ To retrieve permissions:
 
 ```json
 {
-	"reference":"HELLOID-PROFILES"
+  "reference": "HELLOID-PROFILES"
 }
 ```
 
@@ -273,18 +267,17 @@ To retrieve permissions:
 
 The following endpoints are used by the connector
 
-| Endpoint | Description               |
-| -------- | ------------------------- |
-| /rest/functions/completereportresult/  | Retrieve user and permission information |
-| /rest/functions/createupdate/ImportItem/   | Create and update a user |
+| Endpoint                                 | Description                              |
+| ---------------------------------------- | ---------------------------------------- |
+| /rest/functions/completereportresult/    | Retrieve user and permission information |
+| /rest/functions/createupdate/ImportItem/ | Create and update a user                 |
 
 ## Getting help
 
-> [!TIP]
-> _For more information on how to configure a HelloID PowerShell connector, please refer to our [documentation](https://docs.helloid.com/en/provisioning/target-systems/powershell-v2-target-systems.html) pages_.
+> [!TIP] > _For more information on how to configure a HelloID PowerShell connector, please refer to our [documentation](https://docs.helloid.com/en/provisioning/target-systems/powershell-v2-target-systems.html) pages_.
 
 > [!TIP]
->  _If you need help, feel free to ask questions on our [forum](https://forum.helloid.com)_.
+> _If you need help, feel free to ask questions on our [forum](https://forum.helloid.com)_.
 
 ## HelloID docs
 

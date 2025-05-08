@@ -56,9 +56,9 @@ try {
 
     Write-Information 'Verifying if a Spacewell-Axxerion-V2 account exists'
     $splatCompleterReportResultFunction = @{
-        Uri = "$($actionContext.Configuration.BaseUrl)/webservices/duwo/rest/functions/completereportresult"
-        Method = 'POST'
-        Body = [PSCustomObject]@{
+        Uri     = "$($actionContext.Configuration.BaseUrl)/webservices/$($actionContext.Configuration.OrganizationReference)/rest/functions/completereportresult"
+        Method  = 'POST'
+        Body    = [PSCustomObject]@{
             reference    = $actionContext.Configuration.UserReference
             filterFields = @('externalReference')
             filterValues = @("$($actionContext.References.Account)")
@@ -85,25 +85,32 @@ try {
 
     # Process
     switch ($action) {
-        'UpdateAccount'{
+        'UpdateAccount' {
             if (-not($actionContext.DryRun -eq $true)) {
                 Write-Information "Updating Spacewell-Axxerion-V2 account with accountReference: [$($actionContext.References.Account)]"
                 $actionContext.Data.email = $actionContext.References.Account
                 $actionContextDataJson = $actionContext.Data | ConvertTo-Json
                 $accountObjBase64 = [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($actionContextDataJson))
                 $splatUpdateParams = @{
-                    Uri    = "$($actionContext.Configuration.BaseUrl)/webservices/duwo/rest/functions/createupdate/ImportItem"
-                    Method = 'POST'
-                    Body   = @{
+                    Uri         = "$($actionContext.Configuration.BaseUrl)/webservices/$($actionContext.Configuration.OrganizationReference)/rest/functions/createupdate/ImportItem"
+                    Method      = 'POST'
+                    Body        = @{
                         datasource  = 'HelloID'
                         stringValue = 'AccountUpdate'
                         clobMBValue = $accountObjBase64
                     } | ConvertTo-Json -Depth 10
-                    Headers = $headers
+                    Headers     = $headers
                     ContentType = 'application/json'
                 }
                 $updatedAccount = Invoke-RestMethod @splatUpdateParams
                 $outputContext.Data = $updatedAccount
+
+                $outputContext.success = $true
+                $outputContext.AuditLogs.Add([PSCustomObject]@{
+                        Action  = $action
+                        Message = "Updated account with AccountReference: $($outputContext.AccountReference | ConvertTo-Json)."
+                        IsError = $false
+                    })
             } else {
                 Write-Information "[DryRun] Update Spacewell-Axxerion-V2 account with accountReference: [$($actionContext.References.Account)], will be executed during enforcement"
             }
@@ -119,7 +126,7 @@ try {
         }
     }
 } catch {
-    $outputContext.Success  = $false
+    $outputContext.Success = $false
     $ex = $PSItem
     if ($($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or
         $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
