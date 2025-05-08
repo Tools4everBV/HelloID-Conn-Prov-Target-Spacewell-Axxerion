@@ -1,35 +1,69 @@
 [
     {
-        "key": "Username",
-        "type": "input",
-        "defaultValue": "",
-        "templateOptions": {
-            "label": "UserName",
-            "description": "The username of the user who has rights to access the API",
-            "required": true
-        }
+      "key": "Username",
+      "type": "input",
+      "defaultValue": "",
+      "templateOptions": {
+        "label": "UserName [case-sensitive]",
+        "description": "The username of the user who has rights to access the API",
+        "required": true
+      }
     },
     {
-        "key": "Password",
-        "type": "input",
-        "defaultValue": "",
-        "templateOptions": {
-            "label": "Password",
-            "description": "The password for the user who has rights to access the API",
-            "type": "password",
-            "placeholder": "",
-            "required": true
-        }
+      "key": "Password",
+      "type": "input",
+      "defaultValue": "",
+      "templateOptions": {
+        "label": "Password",
+        "description": "The password for the user who has rights to access the API",
+        "type": "password",
+        "placeholder": "",
+        "required": true
+      }
     },
     {
-        "key": "BaseUrl",
-        "type": "input",
-        "defaultValue": "",
-        "templateOptions": {
-            "label": "BaseUrl",
-            "placeholder": "https://<customer>.axxerion.com",
-            "description": "The URL to the Spaxewell Axxerion environment",
-            "required": true
-        }
+      "key": "BaseUrl",
+      "type": "input",
+      "defaultValue": "",
+      "templateOptions": {
+        "label": "BaseUrl",
+        "placeholder": "https://<customer>.axxerion.com",
+        "description": "The URL to the Spaxewell Axxerion environment",
+        "required": true
+      }
+    },
+    {
+      "key": "UserReference",
+      "type": "input",
+      "defaultValue": "",
+      "templateOptions": {
+        "label": "UserReference",
+        "placeholder": "<organizationname>-HELLOID-USERS",
+        "description": "The name of the userreference report",
+        "required": true
+      }
+    },
+    {
+      "key": "OrganizationReference",
+      "type": "input",
+      "defaultValue": "",
+      "templateOptions": {
+        "label": "OrganizationReference [case-sensitive]",
+        "placeholder": "<organizationname>",
+        "description": "The name of the organization used in the endpoint urls",
+        "required": true
+      }
+    },
+    {
+      "key": "ProfileReference",
+      "type": "input",
+      "defaultValue": "",
+      "templateOptions": {
+        "label": "ProfileReference",
+        "placeholder": "<organizationname>-HELLOID-PROFILES",
+        "description": "The name of the profile listreport",
+        "required": true
+      }
     }
-]
+  ]
+  
