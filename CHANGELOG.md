@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file. The format is based on [Keep a Changelog](https://keepachangelog.com), and this project adheres to [Semantic Versioning](https://semver.org).
 
+## [1.0.3] - 08-05-2025
+
+- Fixed some issues and added adjustments after first implementation.
+
 ## [1.0.2] - 25-04-2025
 
 - Fixed incorrect item identification reference format in permission retrieve script.

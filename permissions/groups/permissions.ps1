@@ -45,30 +45,31 @@ function Resolve-Spacewell-Axxerion-V2Error {
 #endregion
 
 try {
+    
     Write-Information 'Creating authentication headers'
     $headers = [System.Collections.Generic.Dictionary[string, string]]::new()
     $headers.Add("Authorization", "Basic $([System.Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes("$($actionContext.Configuration.UserName):$($actionContext.Configuration.Password)")))")
 
     Write-Information 'Retrieving permissions'
     $splatCompleterReportResultFunction = @{
-        Uri = "$($actionContext.Configuration.BaseUrl)/webservices/duwo/rest/functions/completereportresult"
-        Method = 'POST'
-        Body = @{reference = 'DUWOB-HELLOID-PROFILES'} | ConvertTo-Json
+        Uri     = "$($actionContext.Configuration.BaseUrl)/webservices/$($actionContext.Configuration.OrganizationReference)/rest/functions/completereportresult"
+        Method  = 'POST'
+        Body    = @{reference = $actionContext.Configuration.ProfileReference } | ConvertTo-Json
         Headers = $headers
-    }
+    }        
     $retrievedPermissions = Invoke-RestMethod @splatCompleterReportResultFunction
 
-    foreach ($permission in $retrievedPermissions.data) {
+    foreach ($permission in $retrievedPermissions.data) {              
         $outputContext.Permissions.Add(
             @{
                 DisplayName    = $permission.Naam
                 Identification = @{
-                    Reference = $permission.Referentie
+                    Id = $permission.Referentie                                     
                 }
             }
         )
     }
-} catch {
+} catch {    
     $ex = $PSItem
     if ($($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or
         $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {

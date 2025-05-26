@@ -57,9 +57,9 @@ try {
 
     Write-Information 'Verifying if a Spacewell-Axxerion-V2 account exists'
     $splatCompleterReportResultFunction = @{
-        Uri = "$($actionContext.Configuration.BaseUrl)/webservices/duwo/rest/functions/completereportresult"
-        Method = 'POST'
-        Body = [PSCustomObject]@{
+        Uri     = "$($actionContext.Configuration.BaseUrl)/webservices/$($actionContext.Configuration.OrganizationReference)/rest/functions/completereportresult"
+        Method  = 'POST'
+        Body    = [PSCustomObject]@{
             reference    = $actionContext.Configuration.UserReference
             filterFields = @('externalReference')
             filterValues = @("$($actionContext.References.Account)")
@@ -77,45 +77,46 @@ try {
     }
 
     # Process
-    switch ($action) {
+    switch ($action) {        
         'GrantPermission' {
+            
             if (-not($actionContext.DryRun -eq $true)) {
-                Write-Information "Granting Spacewell-Axxerion-V2 permission: [$($actionContext.References.Permission.DisplayName)] - [$($actionContext.References.Permission.Reference)]"
+                Write-Information "Granting Spacewell-Axxerion-V2 permission: [$($actionContext.PermissionDisplayName)] - [$($actionContext.References.Permission.Id)]"
                 $bodyJson = @{
-                    email = $actionContext.References.Account
-                    entitlement = $actionContext.References.Permission.Reference
+                    email       = $actionContext.References.Account
+                    entitlement = $actionContext.References.Permission.Id
                 } | ConvertTo-Json
                 $bodyJsonBase64 = [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($bodyJson))
                 $splatParams = @{
-                    Uri    = "$($actionContext.Configuration.BaseUrl)/webservices/duwo/rest/functions/createupdate/ImportItem"
-                    Method = 'POST'
-                    Body   = @{
+                    Uri         = "$($actionContext.Configuration.BaseUrl)/webservices/$($actionContext.Configuration.OrganizationReference)/rest/functions/createupdate/ImportItem"
+                    Method      = 'POST'
+                    Body        = @{
                         datasource  = 'HelloID'
                         stringValue = 'EntitlementGrant'
                         clobMBValue = $bodyJsonBase64
                     } | ConvertTo-Json -Depth 10
-                    Headers = $headers
+                    Headers     = $headers
                     ContentType = 'application/json'
-                }
+                }                
                 $null = Invoke-RestMethod @splatParams
             } else {
-                Write-Information "[DryRun] Grant Spacewell-Axxerion-V2 permission: [$($actionContext.References.Permission.DisplayName)] - [$($actionContext.References.Permission.Reference)], will be executed during enforcement"
+                Write-Information "[DryRun] Grant Spacewell-Axxerion-V2 permission: [$($actionContext.PermissionDisplayName)] - [$($actionContext.References.Permission.Id)], will be executed during enforcement"
             }
 
             $outputContext.Success = $true
             $outputContext.AuditLogs.Add([PSCustomObject]@{
-                Message = "Grant permission [$($actionContext.References.Permission.DisplayName)] was successful"
-                IsError = $false
-            })
+                    Message = "Grant permission [$($actionContext.PermissionDisplayName)] was successful"
+                    IsError = $false
+                })
         }
 
         'NotFound' {
             Write-Information "Spacewell-Axxerion-V2 account: [$($actionContext.References.Account)] could not be found, possibly indicating that it could be deleted"
-            $outputContext.Success  = $false
+            $outputContext.Success = $false
             $outputContext.AuditLogs.Add([PSCustomObject]@{
-                Message = "Spacewell-Axxerion-V2 account: [$($actionContext.References.Account)] could not be found, possibly indicating that it could be deleted"
-                IsError = $true
-            })
+                    Message = "Spacewell-Axxerion-V2 account: [$($actionContext.References.Account)] could not be found, possibly indicating that it could be deleted"
+                    IsError = $true
+                })
             break
         }
     }
@@ -132,7 +133,7 @@ try {
         Write-Warning "Error at Line '$($ex.InvocationInfo.ScriptLineNumber)': $($ex.InvocationInfo.Line). Error: $($ex.Exception.Message)"
     }
     $outputContext.AuditLogs.Add([PSCustomObject]@{
-        Message = $auditMessage
-        IsError = $true
-    })
+            Message = $auditMessage
+            IsError = $true
+        })
 }

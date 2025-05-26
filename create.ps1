@@ -36,7 +36,7 @@ function Resolve-Spacewell-Axxerion-V2Error {
             # Make sure to inspect the error result object and add only the error message as a FriendlyMessage.
             # $httpErrorObj.FriendlyMessage = $errorDetailsObject.message
             $httpErrorObj.FriendlyMessage = $httpErrorObj.ErrorDetails # Temporarily assignment
-        } catch {
+        }         catch {
             $httpErrorObj.FriendlyMessage = $httpErrorObj.ErrorDetails
         }
         Write-Output $httpErrorObj
@@ -50,7 +50,7 @@ try {
 
     Write-Information 'Creating authentication headers'
     $headers = [System.Collections.Generic.Dictionary[string, string]]::new()
-    $headers.Add("Authorization", "Basic $([System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes("$($actionContext.Configuration.UserName):$($actionContext.Configuration.Password)")))")
+    $headers.Add("Authorization", "Basic $([System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes("$($actionContext.Configuration.UserName):$($actionContext.Configuration.Password)")))")    
 
     # Validate correlation configuration
     if ($actionContext.CorrelationConfiguration.Enabled) {
@@ -65,17 +65,17 @@ try {
         }
 
         Write-Information 'Determine if a user needs to be created or correlated'
-        $splatCompleterReportResultFunction = @{
-            Uri = "$($actionContext.Configuration.BaseUrl)/webservices/duwo/rest/functions/completereportresult"
-            Method = 'POST'
-            Body = [PSCustomObject]@{
-                reference    = 'DUWOB-HELLOID-USERS'
+        $splatCompleterReportResultFunction = @{            
+            Uri     = "$($actionContext.Configuration.BaseUrl)/webservices/$($actionContext.Configuration.OrganizationReference)/rest/functions/completereportresult"
+            Method  = 'POST'
+            Body    = [PSCustomObject]@{                
+                reference    = $actionContext.Configuration.UserReference
                 filterFields = @("externalReference")
                 filterValues = @("$correlationValue")
             } | ConvertTo-Json -Depth 10
             Headers = $headers
         }
-        $correlatedAccount = Invoke-RestMethod @splatCompleterReportResultFunction
+        $correlatedAccount = Invoke-RestMethod @splatCompleterReportResultFunction        
     }
 
     if ($correlatedAccount.data.count -eq 1) {
@@ -91,26 +91,26 @@ try {
         'CreateAccount' {
             if (-not($actionContext.DryRun -eq $true)) {
                 Write-Information 'Creating and correlating Spacewell-Axxerion-V2 account'
-                $actionContextDataJson = $actionContext.Data | ConvertTo-Json
+                $actionContextDataJson = $actionContext.Data | ConvertTo-Json                
                 $accountObjBase64 = [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($actionContextDataJson))
                 $splatCreateParams = @{
-                    Uri    = "$($actionContext.Configuration.BaseUrl)/webservices/duwo/rest/functions/createupdate/ImportItem"
-                    Method = 'POST'
-                    Body   = @{
+                    Uri         = "$($actionContext.Configuration.BaseUrl)/webservices/$($actionContext.Configuration.OrganizationReference)/rest/functions/createupdate/ImportItem"
+                    Method      = 'POST'
+                    Body        = @{
                         datasource  = 'HelloID'
                         stringValue = 'AccountGrant'
                         clobMBValue = $accountObjBase64
-                    }
-                    Headers = $headers
+                    } | ConvertTo-Json -Depth 10
+                    Headers     = $headers
                     ContentType = 'application/json'
                 }
                 $null = Invoke-RestMethod @splatCreateParams
 
                 Write-Information 'Determine if a user is created'
                 $splatCompleterReportResultFunction = @{
-                    Uri = "$($actionContext.Configuration.BaseUrl)/webservices/duwo/rest/functions/completereportresult"
-                    Method = 'POST'
-                    Body = [PSCustomObject]@{
+                    Uri     = "$($actionContext.Configuration.BaseUrl)/webservices/$($actionContext.Configuration.OrganizationReference)/rest/functions/completereportresult"
+                    Method  = 'POST'
+                    Body    = [PSCustomObject]@{
                         reference    = $actionContext.Configuration.UserReference
                         filterFields = @("externalReference")
                         filterValues = @("$correlationValue")
@@ -118,7 +118,8 @@ try {
                     Headers = $headers
                 }
                 $createdAccount = Invoke-RestMethod @splatCompleterReportResultFunction
-                if ($createdAccount.data.count -eq 1){
+                
+                if ($createdAccount.data.count -eq 1) {
                     $outputContext.Data = $createdAccount.data
                     $outputContext.AccountReference = $createdAccount.data.Email
                 } else {
@@ -133,7 +134,6 @@ try {
 
         'CorrelateAccount' {
             Write-Information 'Correlating Spacewell-Axxerion-V2 account'
-
             $outputContext.Data = $correlatedAccount.data
             $outputContext.AccountReference = $correlatedAccount.data.Email
             $outputContext.AccountCorrelated = $true
@@ -148,9 +148,10 @@ try {
             Message = $auditLogMessage
             IsError = $false
         })
-} catch {
+} catch {    
     $outputContext.success = $false
-    $ex = $PSItem
+    $ex = $PSItem    
+    
     if ($($ex.Exception.GetType().FullName -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -or
         $($ex.Exception.GetType().FullName -eq 'System.Net.WebException')) {
         $errorObj = Resolve-Spacewell-Axxerion-V2Error -ErrorObject $ex
